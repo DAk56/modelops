@@ -1,0 +1,13 @@
+- It is recommanded to check the **Overall status** in the model comparision dashboard frequently, if the dashboard is showing red, contact the admin.
+- Use charts like **Model Usage (API Calls)** and **Cost by Model/Tenant** to identify high-usage models and tenants.
+- Track token consumption and processed pages to estimate operational costs and optimize resource allocation.
+- Leverage insights from **Model Success Rate by Tenant** and **Call Status by Tenant** to identify underperforming models or tenants with frequent errors.
+- Consider deboarding models with low usage or poor performance, and onboarding models from families showing high adoption and success rates.
+- Monitor **Input vs Output Tokens by Tenant** to detect tenants with high token usage.
+- Use **Model Success Rate and Call Status** charts to track reliability and error rates.
+- Investigate tenants with low success percentages to identify and resolve integration or model-related issues.
+- Analyze **Assigned vs Consumed Quota by Tenant** to adjust quotas based on actual usage.
+- Increase quotas for high-performing tenants and reduce excess allocations to optimize system resources.
+- Use **Bedrock vs Textract Cost Distribution** and **Cost by Tenant by Model** to understand cost drivers and align them with revenue generation.
+- Monitor **Response Time vs Queue Time** to identify latency bottlenecks.
+- Use charts like **Processed Pages by Timeline** and **Model Adoption by Tenants** to understand throughput and adoption trends.

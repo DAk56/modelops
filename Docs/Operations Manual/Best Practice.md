@@ -1,0 +1,8 @@
+- Always obtain a user access token via the User Credentials API before invoking any Admin API.
+- Ensure the user has been manually assigned the MO_Admin role in the database.
+- Use only Maximus email domains (@maximus.com) for onboarding users and tenants.
+- Validate all request payloads for required fields and correct data types before sending.
+- Avoid duplicate onboarding or associations by checking existing records before making API calls.
+- When rotating or revoking credentials, do not include both actions in the same request.
+- For new models, enable access via AWS Bedrock before onboarding them into ModelOps.
+- Override construct_body() and construct_response() to match the model’s input/output format.

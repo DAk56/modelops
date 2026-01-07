@@ -1,0 +1,2300 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+        "title": "ModelOps Admin API",
+        "version": "1.0.0",
+        "description": "Admin APIs play a foundational role in the ModelOps lifecycle by enabling the onboarding, configuration, and governance of tenants, users, and AI models. They serve as the entry point for initializing environments, managing access, and ensuring operational readiness for model deployment and usage."
+    },    
+    "tags": [
+        {
+            "name": "Authentication",
+            "description": "Authentication"
+        },
+        {
+            "name": "Tenant Management",
+            "description": "Operations related to tenant"
+        },
+        {
+            "name": "Model Management",
+            "description": "Operations related to model"
+        },
+        {
+            "name": "User Management",
+            "description": "Operations related to user"
+        },
+        {
+            "name": "Workflow Management",
+            "description": "Operations related to workflow"
+        }
+    ],
+    "servers": [
+        {
+            "url": "https://dev.modelops.maximus.com/v1",
+            "description": "Development Server"
+        },
+        {
+            "url": "https://cognito-idp.ap-south-1.amazonaws.com",
+            "description": "Access Token for Admin Credentials API"
+        }
+    ],
+    "paths": {       
+        "/": {
+            "post": {
+                "summary": "Admin Credentials API",
+                "description": "ModelOps Admin APIs require secure access via user-level authentication. Users must first obtain an access token using the https://cognito-idp.amazonaws.com/ endpoint.",                                
+                "tags": ["Authentication"],
+                "parameters": [                    
+                    {
+                        "name": "X-Amz-Target",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "AWSCognitoIdentityProviderService.InitiateAuth"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/x-amz-json-1.1": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "AuthFlow": {
+                                        "type": "string",
+                                        "example": "USER_PASSWORD_AUTH"
+                                    },
+                                    "ClientId": {
+                                        "type": "string",
+                                        "example": "xxxxxxx"
+                                    },
+                                    "AuthParameters": {
+                                        "type": "object",
+                                        "properties": {
+                                            "USERNAME": {
+                                                "type": "string",
+                                                "example": "xxxxxxx"
+                                            },
+                                            "PASSWORD": {
+                                                "type": "string",
+                                                "example": "xxxxxxx"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Access Token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                   "type": "object",
+                                    "properties": {
+                                        "AuthenticationResult": {
+                                            "type": "object",
+                                            "properties": {
+                                                "AccessToken": {
+                                                    "type": "string",
+                                                    "example": "xxxxxxxx"
+                                                },
+                                                "ExpiresIn": {
+                                                    "type": "integer",
+                                                    "example": 3600
+                                                },
+                                                "IdToken": {
+                                                    "type": "string",
+                                                    "example": "xxxxxxxx"
+                                                },
+                                                "RefreshToken": {
+                                                    "type": "string",
+                                                    "example": "xxxxxxxx"
+                                                },
+                                                "TokenType": {
+                                                    "type": "string",
+                                                    "example": "Bearer"
+                                                }
+                                            }
+                                        },
+                                        "ChallengeParameters": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "Incorrect username or password / User pool client xxxxx does not exist."
+                                        }                              
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tenant": {
+            "post": {
+                "summary": "Onboarding a Tenant API",
+                "description": "Use this API endpoint to onboard a tenant. <table>\n  <thead>\n    <tr>\n      <th>Request Body Properties</th>\n      <th>Definition</th>\n      <th>Data Type</th>\n      <th>Required/Optional</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>name</td>\n      <td>Name of the tenant</td>\n      <td>string</td>\n      <td>Required</td>\n    </tr>\n    <tr>\n      <td>emailId</td>\n      <td>Maximus email address of the tenant</td>\n      <td>string</td>\n      <td>Required</td>\n    </tr>\n    <tr>\n      <td>dataRetentionPeriodInDays</td>\n      <td>number of days the data is stored.(default value is 1)</td>\n      <td>integer</td>\n      <td>Optional</td>\n    </tr>\n    <tr>\n      <td>credentialsCount</td>\n      <td>Number of credentials needed for the particular tenant (default value is 1)</td>\n      <td>integer</td>\n      <td>Optional</td>\n    </tr>\n  <tr>\n      <td>dispatchType</td>\n      <td>Type of dispatch mechanism (Step_Function, SNS, Event_Bridge, URL)</td>\n      <td>string</td>\n      <td>Optional</td>\n    </tr>\n     <tr>\n      <td>dispatchConfig</td>\n      <td>Configuration object for the chosen dispatch type.</td>\n      <td>string</td>\n      <td>Optional</td>\n    </tr>\n  </tbody>\n</table>",
+                "tags": ["Tenant Management"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "allOf": [
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "name": {
+                                                "type": "string",
+                                                "example": "**insert name of the Tenant**"
+                                            },
+                                            "emailId": {
+                                                "type": "string",
+                                                "format": "email",
+                                                "example": "email.of.the.tenant@maximus.com"
+                                            },
+                                            "dataRetentionPeriodInDays": {
+                                                "type": "integer",
+                                                "minimum": 1,
+                                                "default": 1,
+                                                "example": 2
+                                            },
+                                            "credentialsCount": {
+                                                "type": "integer",
+                                                "minimum": 1,
+                                                "default": 1,
+                                                "example": 2
+                                            },
+                                            "dispatchType": {
+                                                "type": "string",
+                                                "description": "Type of notification dispatch to use for the tenant.",
+                                                "enum": ["sns", "step_function", "event_bridge", "url"],
+                                                "example": "sns"
+                                            },
+                                            "dispatchConfig": {
+                                                "type": "object",
+                                                "description": "Configuration object whose required fields depend on dispatchType."
+                                            }
+                                        },
+                                        "required": ["name", "email"]
+                                    },
+                                    {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "dispatchType": {
+                                                        "type": "string",
+                                                        "enum": ["sns"]
+                                                    },
+                                                    "dispatchConfig": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "arn": {
+                                                                "type": "string",
+                                                                "example": "arn:aws:bedrock:ap-south-1::foundation-model/amazon.titan-text-lite-v1"
+                                                            }
+                                                        },
+                                                        "required": ["arn"],
+                                                        "additionalProperties": false
+                                                    }
+                                                },
+                                                "required": ["dispatchType", "dispatchConfig"]
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "dispatchType": {
+                                                        "type": "string",
+                                                        "enum": ["step_function"]
+                                                    },
+                                                    "dispatchConfig": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "arn": {
+                                                                "type": "string",
+                                                                "example": "arn:aws:states:us-east-1:123456789012:stateMachine:my-sfn"
+                                                            }
+                                                        },
+                                                        "required": ["arn"],
+                                                        "additionalProperties": false
+                                                    }
+                                                },
+                                                "required": ["dispatchType", "dispatchConfig"]
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "dispatchType": {
+                                                        "type": "string",
+                                                        "enum": ["event_bridge"]
+                                                    },
+                                                    "dispatchConfig": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "arn": {
+                                                                "type": "string",
+                                                                "example": "arn:aws:events:us-east-1:123456789012:event-bus/default"
+                                                            },
+                                                            "detail_type": {
+                                                                "type": "string",
+                                                                "example": "WorkflowNotification"
+                                                            },
+                                                            "source": {
+                                                                "type": "string",
+                                                                "example": "modelops.workflow"
+                                                            }
+                                                        },
+                                                        "required": ["arn", "detail_type", "source"],
+                                                        "additionalProperties": false
+                                                    }
+                                                },
+                                                "required": ["dispatchType", "dispatchConfig"]
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                     "dispatchType": {
+                                                        "type": "string",
+                                                        "enum": ["url"]
+                                                     },
+                                                     "dispatchConfig": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "url": {
+                                                                "type": "string",
+                                                                "format": "uri",
+                                                                "example": "https://hooks.example.com/tenant-callback"
+                                                            }
+                                                        },
+                                                        "required": ["url"],
+                                                        "additionalProperties": false
+                                                     }
+                                                },
+                                                "required": ["dispatchType", "dispatchConfig"]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            "examples": {
+                                "sns": {
+                                    "summary": "SNS dispatch",
+                                    "value": {
+                                        "name": "xxxxxx",
+                                        "emailId": "tenant.owner@maximus.com",
+                                        "dataRetentionPeriodInDays": 1,
+                                        "credentialsCount": 2,
+                                        "dispatchType": "sns",
+                                        "dispatchConfig": {
+                                            "arn": "arn:aws:sns:us-east-1:123456789012:my-topic"
+                                        }
+                                    }
+                                },
+                                "step_function": {
+                                    "summary": "Step Functions dispatch",
+                                    "value": {
+                                        "name": "xxxxxx",
+                                        "emailId": "tenant.owner@maximus.com",
+                                        "dataRetentionPeriodInDays": 1,
+                                        "credentialsCount": 2,
+                                        "dispatchType": "step_function",
+                                        "dispatchConfig": {
+                                            "arn": "arn:aws:states:us-east-1:123456789012:stateMachine:my-sfn"
+                                        }
+                                    }
+                                },
+                                "event_bridge": {
+                                    "summary": "EventBridge dispatch",
+                                    "value": {
+                                        "name": "xxxxxx",
+                                        "emailId": "tenant.owner@maximus.com",
+                                        "dataRetentionPeriodInDays": 1,
+                                        "credentialsCount": 2,
+                                        "dispatchType": "event_bridge",
+                                        "dispatchConfig": {
+                                            "arn": "arn:aws:events:us-east-1:123456789012:event-bus/default",
+                                            "detail_type": "WorkflowNotification",
+                                            "source": "modelops.workflow"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "summary": "Direct URL callback",
+                                    "value": {
+                                        "name": "xxxxxx",
+                                        "emailId": "tenant.owner@maximus.com",
+                                        "dataRetentionPeriodInDays": 1,
+                                        "credentialsCount": 2,
+                                        "dispatchType": "url",
+                                        "dispatchConfig": {
+                                            "url": "https://hooks.example.com/tenant-callback"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "tenantId": {
+                                            "type": "string",
+                                            "example": "xxxxxxxx"
+                                        },
+                                        "apiKey": {
+                                            "type": "string",
+                                            "example": "xxxxxx"
+                                        },
+                                        "credentials": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/CredentialsList"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                   "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "An error occured while onboarding tenant : xxxx already exists"
+                                        }                              
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tenant/{tenant_id}": {
+            "get": {
+                "summary": "Get Tenant details API",
+                "description": "This API allows ModelOps administrators to know the details of an existing tenant.",
+                "tags": ["Tenant Management"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "tenant_id",
+                        "in": "path",
+                        "description": "ID of Tenant",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tenant details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "tenantId": {
+                                            "type": "string",
+                                            "example": "xxxxx"
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "xxxxx"
+                                        },
+                                        "active": {
+                                            "type": "boolean",
+                                            "example": "true"
+                                        },
+                                        "emailId": {
+                                            "type": "string",
+                                            "example": "xxxxx@maximus.com"
+                                        },
+                                        "createdAt": {
+                                            "type": "string",
+                                            "example": "2025-09-15T08:58:02.000Z"
+                                        },
+                                        "rateLimit": {
+                                            "type": "integer",
+                                            "example": 12000
+                                        },
+                                        "burstLimit": {
+                                            "type": "integer",
+                                            "example": 1000
+                                        },
+                                        "quotaLimit": {
+                                            "type": "integer",
+                                            "example": 10000
+                                        },
+                                        "quotaPeriod": {
+                                            "type": "string",
+                                            "example": "MONTH"
+                                        },
+                                        "modelAccess": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "modelId": {
+                                                        "type": "string",
+                                                        "example": "anthropic.claude-3-haiku-20240307-v1:0"
+                                                    },
+                                                    "modelIdentifier": {
+                                                        "type": "string",
+                                                        "example": "anthropic-claude-3-haiku"
+                                                    },
+                                                    "accessType": {
+                                                        "type": "string",
+                                                        "example": "SHARED"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 404
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "Tenant does not exist for given Id - xxxxx"
+                                        }                              
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "summary": "Updating a Tenant API",
+                "description": "This API allows ModelOps administrators to update the details of an existing tenant. Typical use cases include modifying the tenant name, updating associated models, or changing metadata. <table>\n  <thead>\n    <tr>\n      <th>Request Body Properties</th>\n      <th>Definition</th>\n      <th>Data Type</th>\n      <th>Required/Optional</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>emailId</td>\n      <td>Email address that is going to show after updation</td>\n      <td>string</td>\n      <td>Conditional</td>\n    </tr>\n    <tr>\n      <td>rateLimit</td>\n      <td>Rate limit that is needed for the tenant</td>\n      <td>integer (also accepts numeric strings, e.g., \"1000\")</td>\n      <td>Conditional</td>\n    </tr>\n    <tr>\n      <td>burstLimit</td>\n      <td>Burst limit that is needed for the tenant</td>\n      <td>integer (also accepts numeric strings, e.g., \"1000\")</td>\n      <td>Conditional</td>\n    </tr>\n    <tr>\n      <td>quotaLimit</td>\n      <td>Quota limit that is needed for the tenant</td>\n      <td>integer (also accepts numeric strings, e.g., \"1000\")</td>\n      <td>Conditional</td>\n    </tr>\n    <tr>\n      <td>quotaPeriod</td>\n      <td>Quota period that is needed for the tenant. can be DAY, WEEK, and MONTH.</td>\n      <td>string</td>\n      <td>Conditional</td>\n    </tr>\n    <tr>\n      <td>dataRetentionPeriodInDays</td>\n      <td>Data retaintion needed for the tenant in days.</td>\n      <td>integer</td>\n      <td>Conditional</td>\n <tr>\n      <td>dispatchType</td>\n      <td>Type of dispatch mechanism (Step_Function, SNS, Event_Bridge, URL)</td>\n      <td>string</td>\n      <td>Conditional</td>\n <tr>\n      <td>dispatchConfig</td>\n      <td>Configuration object for the chosen dispatch type.</td>\n      <td>string</td>\n      <td>Conditional</td>\n    </tr>\n  </tbody>\n</table>",
+                "tags": ["Tenant Management"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "tenant_id",
+                        "in": "path",
+                        "description": "ID of Tenant",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "allOf": [
+                                    {
+                                        "type": "object",
+                                        "minProperties": 1,
+                                        "additionalProperties": false,
+                                        "properties": {
+                                            "emailId": {
+                                                "type": "string",
+                                                "format": "email",
+                                                "example": "xxxxx@maximus.com"
+                                            },
+                                            "rateLimit": {
+                                                "type": "integer",
+                                                "description": "Requests per second allowed",
+                                                "example": 120
+                                            },
+                                            "burstLimit": {
+                                                "type": "integer",
+                                                "description": "Maximum burst capacity",
+                                                "example": 1000
+                                            },
+                                            "quotaLimit": {
+                                                "type": "integer",
+                                                "description": "Total number of requests allowed in the quota period",
+                                                "example": 1
+                                            },
+                                            "quotaPeriod": {
+                                                "type": "string",
+                                                "description": "Quota period (e.g., DAY/WEEK/MONTH).",
+                                                "example": "MONTH"
+                                            },
+                                            "dataRetentionPeriodInDays": {
+                                                "type": "integer",
+                                                "minimum": 1,
+                                                "example": 1
+                                            },
+                                            "dispatchType": {
+                                                "type": "string",
+                                                "description": "Type of notification dispatch to use for the tenant.",
+                                                "enum": ["sns", "step_function", "event_bridge", "url"],
+                                                "example": "sns"
+                                            },
+                                            "dispatchConfig": {
+                                                "type": "object",
+                                                "description": "Configuration object whose required fields depend on dispatchType."
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "required": ["dispatchType", "dispatchConfig"],
+                                                "properties": {
+                                                    "dispatchType": {
+                                                        "type": "string",
+                                                        "enum": ["sns"]
+                                                    },
+                                                    "dispatchConfig": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "arn": {
+                                                            "type": "string",
+                                                            "example": "arn:aws:sns:us-east-1:123456789012:my-topic"
+                                                        }
+                                                    },
+                                                    "required": ["arn"],
+                                                    "additionalProperties":false
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "object",
+                                            "required": ["dispatchType", "dispatchConfig"],
+                                            "properties": {
+                                                "dispatchType": {
+                                                "type": "string",
+                                                "enum": ["step_function"]
+                                                },
+                                                "dispatchConfig": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "arn": {
+                                                    "type": "string",
+                                                    "example": "arn:aws:states:us-east-1:123456789012:stateMachine:my-sfn"
+                                                    }
+                                                },
+                                                "required": ["arn"],
+                                                "additionalProperties": false
+                                                }
+                                            }
+                                          },
+                                          {
+                                                "type": "object",
+                                                "required": ["dispatchType", "dispatchConfig"],
+                                                "properties": {
+                                                    "dispatchType": {
+                                                    "type": "string",
+                                                    "enum": ["event_bridge"]
+                                                    },
+                                                    "dispatchConfig": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "arn": {
+                                                        "type": "string",
+                                                        "example": "arn:aws:events:us-east-1:123456789012:event-bus/default"
+                                                        },
+                                                        "detail_type": {
+                                                        "type": "string",
+                                                        "example": "WorkflowNotification"
+                                                        },
+                                                        "source": {
+                                                        "type": "string",
+                                                        "example": "modelops.workflow"
+                                                        }
+                                                    },
+                                                    "required": ["arn", "detail_type", "source"],
+                                                    "additionalProperties": false
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "type": "object",
+                                                "required": ["dispatchType", "dispatchConfig"],
+                                                "properties": {
+                                                    "dispatchType": {
+                                                    "type": "string",
+                                                    "enum": ["url"]
+                                                    },
+                                                    "dispatchConfig": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "url": {
+                                                        "type": "string",
+                                                        "format": "uri",
+                                                        "example": "https://hooks.example.com/tenant-callback"
+                                                        }
+                                                    },
+                                                    "required": ["url"],
+                                                    "additionalProperties": false
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "type": "object",
+                                                "description": "No dispatch changes in this request.",
+                                                "not": {
+                                                    "anyOf": [
+                                                        {"required": ["dispatchType"]},
+                                                        {"required": ["dispatchConfig"]}
+                                                    ]
+                                                }
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            "examples": {
+                                "UpdateEmailAndDispatchSNS": {
+                                    "summary": "Update email and set SNS dispatch",
+                                    "value": {
+                                        "emailId": "xxxxx@maximus.com",
+                                        "dispatchType": "sns",
+                                        "dispatchConfig": {
+                                            "arn": "arn:aws:sns:us-east-1:123456789012:my-topic"
+                                        }
+                                    }
+                                },
+                                "UpdateRateLimitsOnly": {
+                                    "summary": "Update throttling settings only",
+                                    "value": {
+                                        "rateLimit": 120,
+                                        "burstLimit": 1000,
+                                        "quotaLimit": 1,
+                                        "quotaPeriod": "MONTH"
+                                    }
+                                },
+                                "UpdateEventBridgeConfig": {
+                                    "summary": "Use EventBridge for notifications",
+                                    "value": {
+                                        "dispatchType": "event_bridge",
+                                        "dispatchConfig": {
+                                            "arn": "arn:aws:events:us-east-1:123456789012:event-bus/default",
+                                            "detail_type": "WorkflowNotification",
+                                            "source": "modelops.workflow"
+                                        }
+                                    }
+                                },
+                                "UseDirectUrlCallback": {
+                                    "summary": "Send callbacks to a direct URL",
+                                    "value": {
+                                        "dispatchType": "url",
+                                        "dispatchConfig": {
+                                            "url": "https://hooks.example.com/tenant-callback"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Tenant details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                "properties": {
+                                    "tenantId": {
+                                        "type": "string",
+                                        "example": "xxxxx"
+                                    },
+                                    "emailId": {
+                                        "type": "string",
+                                        "example": "xxxxx@maximus.com"
+                                    },
+                                    "rateLimit": {
+                                        "type": "integer",
+                                        "example": 120
+                                    },
+                                    "burstLimit": {
+                                        "type": "integer",
+                                        "example": 1000
+                                    },
+                                    "quotaLimit": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "quotaPeriod": {
+                                        "type": "string",
+                                        "example": "MONTH"
+                                    },
+                                    "updatedTs": {
+                                        "type": "string",
+                                        "example": "2025-09-16T06:12:18.476Z"
+                                    }
+                                }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "An error occured while updating tenant details : Period should be one of DAY,MONTH or WEEK"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Deboarding a Tenant API",
+                "description": "This API allows ModelOps administrators to deboard an existing tenant.",
+                "tags": ["Tenant Management"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "tenant_id",
+                        "in": "path",
+                        "description": "ID of Tenant",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tenant details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "active": {
+                                            "type": "boolean",
+                                            "example": "false"
+                                        },
+                                        "tenantId": {
+                                            "type": "string",
+                                            "example": "xxxxx"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 404
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "An error occured while deboarding tenant : xxxxx does not exist"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tenant/credentials": {            
+            "patch": {
+                "summary": "Change the Tenant Credentials API",
+                "description": "This API allows ModelOps administrators to rotate client secrets or revoke credentials for a tenant. It is essential for maintaining security when credentials are compromised, lost, or need to be refreshed. <table>\n  <thead>\n    <tr>\n      <th>Request Body Properties</th>\n      <th>Definition</th>\n      <th>Data Type</th>\n      <th>Required/Optional</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>tenantId</td>\n      <td>Unique identifier of the tenant whose credentials are being updated.</td>\n      <td>string</td>\n      <td>Required</td>\n    </tr>\n    <tr>\n      <td>clientIds</td>\n      <td>List of client IDs whose credentials are to be rotated or revoked</td>\n      <td>array of strings</td>\n      <td>Required</td>\n    </tr>\n    <tr>\n      <td>rotateClientSecret</td>\n      <td>Set to true to rotate the client secret for the specified client IDs.</td>\n      <td>boolean</td>\n      <td>Conditional</td>\n    </tr>\n    <tr>\n      <td>revokeCredentials</td>\n      <td>Set to true to revoke credentials for the specified client IDs.</td>\n      <td>boolean</td>\n      <td>Conditional</td>\n    </tr>\n  </tbody>\n</table>",
+                "tags": ["Tenant Management"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "tenantId": {
+                                        "type": "string",
+                                        "example": "xxxxxx"
+                                    },
+                                    "clientIds": {
+                                        "type": "string",
+                                        "enum": ["xxxxxx"]
+                                    },
+                                    "rotateClientSecret": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Tenant details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "tenantId": {
+                                            "type": "string",
+                                            "example": "xxxxxx"
+                                        },
+                                        "credentials": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/CredentialsList"
+                                            }
+                                        }
+                                    }                                
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "An error occured while updating tenant credentials : clientIds must be a list"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 404
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "An error occured while updating tenant credentials : No credentials found for tenantId=xxxxx"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tenant/models": {
+            "post": {
+                "summary": "Associating a Tenant with a Model API",
+                "description": "Use it to associate an available model with the tenant. <table>\n  <thead>\n    <tr>\n      <th>Request Body Properties</th>\n      <th>Definition</th>\n      <th>Data Type</th>\n      <th>Required/Optional</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>modelAccess</td>\n      <td>List of model access configurations for the tenant. Each object defines access details for a specific model.</td>\n      <td>array of objects</td>\n      <td>Required</td>\n    </tr>\n    <tr>\n      <td>modelID</td>\n      <td>Unique identifier of the AI model to be onboarded</td>\n      <td>string</td>\n      <td>Required</td>\n    </tr>\n    <tr>\n      <td>access</td>\n      <td>Access control action.Use \"grant\" to allow access to the model. Use \"revoke\" to remove access to the model.</td>\n      <td>string</td>\n      <td>Required</td>\n    </tr>\n    <tr>\n      <td>modelAccess</td>\n      <td>Access type. Use \"shared\" to indicate shared model access across tenants. Use \"dedicated\" to indicated dedicated model acess across tenants</td>\n      <td>string</td>\n      <td>Required</td>\n    </tr>\n    <tr>\n      <td>tenantID</td>\n      <td>ID of the tenant to which the model is being onboarded or deboarded</td>\n      <td>string</td>\n      <td>Required</td>\n    </tr>\n  </tbody>\n</table>",
+                "tags": ["Tenant Management"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "modelAccess": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "modelId": {
+                                                    "type": "string",
+                                                    "example": "anthropic.claude-3-haiku-20240307-v1:0"
+                                                },
+                                                "access": {
+                                                    "type": "string",
+                                                    "example": "grant"
+                                                },
+                                                "modelAccess": {
+                                                    "type": "string",
+                                                    "example": "shared"
+                                                },
+                                                "tenantId": {
+                                                    "type": "string",
+                                                    "example": "xxxxx"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }                               
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Tenant details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "tenantId": {
+                                                "type": "string",
+                                                "example": "xxxxx"
+                                            },
+                                            "aiModelId": {
+                                                "type": "string",
+                                                "example": "anthropic.claude-3-haiku-20240307-v1:0"
+                                            },
+                                            "access": {
+                                                "type": "string",
+                                                "example": "grant"
+                                            },
+                                            "modelAccess": {
+                                                "type": "string",
+                                                "example": "shared"
+                                            },
+                                            "message": {
+                                                "type": "string",
+                                                "example": "Grant successful with shared access"
+                                            },
+                                            "createdAt": {
+                                                "type": "string",
+                                                "example": "2025-09-15T10:42:16.501396+00:00"
+                                            },
+                                            "updatedAt": {
+                                                "type": "string",
+                                                "example": "2025-09-15T10:42:16.501396+00:00"
+                                            }
+                                        }
+                                    }                              
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "Invalid access value xxxx . Must be one of ['grant', 'revoke']"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 404
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "Model not exist in modelops for the give id -xxxxxx"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/modelops/model/{model_id}": {
+            "post": {
+                "summary": "Onboarding a Model API",
+                "description": "This API allows ModelOps administrators to onboard a model.",
+                "tags": ["Model Management"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "model_id",
+                        "in": "path",
+                        "description": "ID of Model",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tenant details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Model onboarded successfully"
+                                        },
+                                        "modelId": {
+                                            "type": "string",
+                                            "example": "amazon.titan-text-lite-v1"
+                                        },
+                                        "active": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "service": {
+                                            "type": "string",
+                                            "example": "TEXT"
+                                        }
+                                    }                              
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "xxxxxx already exists"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Deboarding a Model API",
+                "description": "This API allows ModelOps administrators to deboard a model.",
+                "tags": ["Model Management"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "model_id",
+                        "in": "path",
+                        "description": "ID of Model",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Model onboarded successfully"
+                                        },
+                                        "modelId": {
+                                            "type": "string",
+                                            "example": "amazon.titan-text-lite-v1"
+                                        },
+                                        "active": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "service": {
+                                            "type": "string",
+                                            "example": "TEXT"
+                                        }
+                                    }                              
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/modelops/model": {
+            "patch": {
+                "summary": "Updating a Model API",
+                "description": "This API allows ModelOps administrators to update the maxToken of a model.",
+                "tags": ["Model Management"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "modelId": {
+                                        "type": "string",
+                                        "example": "amazon.titan-text-lite-v1"
+                                    },
+                                    "maxToken": {
+                                        "type": "integer",
+                                        "example": 4096
+                                    }
+                                }                               
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "modelId": {
+                                            "type": "string",
+                                            "example": "amazon.titan-text-lite-v1"
+                                        },
+                                        "active": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "service": {
+                                            "type": "string",
+                                            "example": "TEXT"
+                                        },
+                                        "maxToken": {
+                                            "type": "integer",
+                                            "example": 4096
+                                        },
+                                        "modelInfo": {
+                                            "type": "object",
+                                            "properties": {
+                                                "modelArn": {
+                                                    "type": "string",
+                                                    "example": "arn:aws:bedrock:ap-south-1::foundation-model/amazon.titan-text-lite-v1"
+                                                },
+                                                "modelId": {
+                                                    "type": "string",
+                                                    "example": "amazon.titan-text-lite-v1"
+                                                },
+                                                "modelName": {
+                                                    "type": "string",
+                                                    "example": "Titan Text G1 - Lite"
+                                                },
+                                                "providerName": {
+                                                    "type": "string",
+                                                    "example": "Amazon"
+                                                },
+                                                "inputModalities": {
+                                                    "type": "string",
+                                                    "enum": ["TEXT"]
+                                                },
+                                                "outputModalities": {
+                                                    "type": "string",
+                                                    "enum": ["TEXT"]
+                                                },
+                                                "responseStreamingSupported": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "customizationsSupported": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "inferenceTypesSupported": {
+                                                    "type": "string",
+                                                    "enum": ["ON_DEMAND"]
+                                                },
+                                                "modelLifecycle": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "status": {
+                                                            "type": "string",
+                                                            "example": "ACTIVE"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }                              
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "Max tokens must be between 1 and 4096 for amazon.titan-text-lite-v1."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/user": {
+            "post": {
+                "summary": "Onboarding a User API",
+                "description": "Allows ModelOps administrators to onboard a user. <table>\n  <thead>\n    <tr>\n      <th>Request Body Properties</th>\n      <th>Definition</th>\n      <th>Data Type</th>\n      <th>Required/Optional</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>emailId</td>\n      <td>Email ID of the user</td>\n      <td>string</td>\n      <td>Required</td>\n    </tr>\n    <tr>\n      <td>firstName</td>\n      <td>First name of the user</td>\n      <td>string</td>\n      <td>Required</td>\n    </tr>\n    <tr>\n      <td>lastName</td>\n      <td>Surname of user</td>\n      <td>string</td>\n      <td>Optional</td>\n    </tr>\n  </tbody>\n</table>",
+                "tags": ["User Management"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "emailId": {
+                                        "type": "string",
+                                        "example": "xxxxx@maximus.com"
+                                    },
+                                    "firstName": {
+                                        "type": "string",
+                                        "example": "xxxx"
+                                    },
+                                    "lastName": {
+                                        "type": "string",
+                                        "example": "xxxxx"
+                                    }
+                                }                               
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "User onboarded"
+                                        },
+                                        "active": {
+                                            "type": "boolean",
+                                            "example": true
+                                        }
+                                    }                              
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "User with email xxxx@maximus.com already exists."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/user/{user_email}/tenants": {
+            "post": {
+                "summary": "Associating or Disassociating a User with a Tenant API",
+                "description": "This API allows ModelOps administrators to associate or disassociate a user with a tenant. <table>\n  <thead>\n    <tr>\n      <th>Request Body Properties</th>\n      <th>Definition</th>\n      <th>Data Type</th>\n      <th>Required/Optional</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>emailId</td>\n      <td>Maximus email address of the user</td>\n      <td>string</td>\n      <td>Required</td>\n    </tr>\n    <tr>\n      <td>tenantId</td>\n      <td>ID of the tenant to which the user is being onboarded or deboarded.</td>\n      <td>string</td>\n      <td>Required</td>\n    </tr>\n    <tr>\n      <td>accessType</td>\n      <td>Access type. Use \"grant\" to allow the user to associate with the tenantId, use \"revoke\" to disassociate the user from the mentioned tenantId</td>\n      <td>string</td>\n      <td>Required</td>\n    </tr>\n  </tbody>\n</table>",
+                "tags": ["User Management"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "user_email",
+                        "in": "path",
+                        "description": "EmailId of the user",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "emailId": {
+                                        "type": "string",
+                                        "example": "xxxxx@maximus.com"
+                                    },
+                                    "tenantIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": ["xxxxxx"]
+                                        }
+                                    },
+                                    "accessType": {
+                                        "type": "string",
+                                        "example": "xxxxx"
+                                    }
+                                }                               
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "User access granted"
+                                        },
+                                        "active": {
+                                            "type": "boolean",
+                                            "example": true
+                                        }
+                                    }                              
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "Tenant not found for the provided id - xxxx"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/workflow": {
+            "post": {
+                "summary": "Onboarding a Workflow API",
+                "description": "Use this API endpoint to onboard a workflow into ModelOps. This registers the workflow name(workflow_id), dispatch type, and dispatch configuration.",
+                "tags": ["Workflow Management"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody":{
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "oneOf": [
+                                    {"$ref": "#/components/schemas/WorkflowRequestSns"},
+                                    {"$ref": "#/components/schemas/WorkflowRequestStepFunction"},
+                                    {"$ref": "#/components/schemas/WorkflowRequestEventBridge"}
+                                ],
+                                "discriminator":{
+                                    "propertyName": "dispatchType",
+                                    "mapping": {
+                                        "sns": "#/components/schemas/WorkflowRequestSns",
+                                        "step_function": "#/components/schemas/WorkflowRequestStepFunction",
+                                        "event_bridge": "#/components/schemas/WorkflowRequestEventBridge"
+                                    }
+                                }
+                            },
+                            "examples": {
+                                "sns": {
+                                    "summary": "Example of sns",
+                                    "value": {
+                                        "name": "idp",
+                                        "dispatchType": "sns",
+                                        "dispatchConfig": {
+                                            "arn": "arn:aws:states:<region>:<account>:stateMachine:<name>"
+                                        }
+                                    }
+                                },
+                                "step_function": {
+                                    "summary": "Example of step_function",
+                                    "value": {
+                                        "name": "idp",
+                                        "dispatchType": "step_function",
+                                        "dispatchConfig": {
+                                            "arn": "arn:aws:states:<region>:<account>:stateMachine:<name>"
+                                        }
+                                    }
+                                },
+                                "event_bridge": {
+                                    "summary": "Example of event_bridge",
+                                    "value": {
+                                        "name": "idp",
+                                        "dispatchType": "event_bridge",
+                                        "dispatchConfig": {
+                                            "arn": "arn:aws:states:<region>:<account>:stateMachine:<name>",
+                                            "source": "modelops.workflow",
+                                            "detail_type": "WorkflowInvoke"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description":"OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "workflowId": {
+                                            "type": "string",
+                                            "example": "xxxx"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Workflow onboarded successfully"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "Workflow name 'xxx' already exists. Please choose a unique name."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tenant/workflow": {
+            "post":{
+                "summary": "Associating and disassociating tenants with a workflow API",
+                "description": "Use this API to grant or revoke access between tenants and workflows in ModelOps. This endpoint supports bulk operations, allowing you to associate or disassociate multiple tenants and workflows in a single request.",
+                "tags": ["Workflow Management"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties":{
+                                    "workflowAccess": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "workflowId": {
+                                                    "type": "string",
+                                                    "example": "xxxx"
+                                                },
+                                                "access": {
+                                                    "type": "string",
+                                                    "example": "xxxxx"
+                                                },
+                                                "tenantId": {
+                                                    "type": "string",
+                                                    "example": "xxxxxxxx"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "properties": {
+                                        "tenantId": {
+                                            "type": "string",
+                                            "example": "xxxxxxx"
+                                        },
+                                        "workflowId": {
+                                            "type": "string",
+                                            "example": "xxxxx"
+                                        },
+                                        "access": {
+                                            "type": "string",
+                                            "example": "grant"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Grant successful with shared access"
+                                        },
+                                        "createdAt": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2025-10-09T14:19:46.670562+00:00"
+                                        },
+                                        "updatedAt": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2025-10-09T14:19:46.670562+00:00"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "xxxxxxxx and xxx already exists"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/workflow/models":{
+            "post": {
+                "summary": "Onboarding and deboarding a model to the workflow API",
+                "description": "Use this API to grant or revoke access between models and workflows in ModelOps. This endpoint supports bulk operations, allowing you to associate or disassociate multiple models and workflows in a single request.",
+                "tags": ["Workflow Management"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required":true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "aiModelAccess": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "workflowId": {
+                                                    "type": "string",
+                                                    "example": "xxxxx"
+                                                },
+                                                "access": {
+                                                    "type": "string",
+                                                    "enum": ["grant", "revoke"],
+                                                    "example": "grant"
+                                                },
+                                                "modelId": {
+                                                    "type": "string",
+                                                    "example": "amazon.titan-text-lite-v1"
+                                                }
+                                            },
+                                            "required": ["workflowId", "access", "modelId"],
+                                            "additionalProperties": false
+                                        }
+                                    }
+                                },
+                                "required": ["aiModelAccess"],
+                                "additionalProperties": false
+                            },
+                            "example": {
+                                "aiModelAccess": [
+                                    {"workflowId": "xxxxx",    "access": "grant",  "modelId": "amazon.titan-text-lite-v1"},
+                                    {"workflowId": "xxxxxxxx",    "access": "grant",  "modelId": "amazon.titan-text-lite-v1"},
+                                    { "workflowId": "xxxxxx",   "access": "revoke", "modelId": "amazon.titan-text-lite-v1" }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "modelId": {
+                                                "type": "string",
+                                                "example": "amazon.titan-text-lite-v1"
+                                            },
+                                            "workflowId": { "type": "string", "example": "xxxxx" },
+                                            "access": {
+                                                "type": "string",
+                                                "enum": ["grant", "revoke"],
+                                                "example": "grant"
+                                            },
+                                            "message": { "type": "string", "example": "GRANT" },
+                                            
+                                            "createdAt": {
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2025-10-16T07:40:27.766429+00:00"
+                                            },
+                                            "updatedAt": {
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2025-10-16T07:40:27.766429+00:00"
+                                            }
+                                        },
+                                        "required": ["modelId", "workflowId", "access", "message", "createdAt", "updatedAt"],
+                                        "additionalProperties": false
+                                    }
+                                },
+                                "example": [
+                                    {
+                                        "modelId": "amazon.titan-text-lite-v1",
+                                        "workflowId": "xxxxx",
+                                        "access": "grant",
+                                        "message": "GRANT",
+                                        "createdAt": "2025-10-16T07:40:27.766429+00:00",
+                                        "updatedAt": "2025-10-16T07:40:27.766429+00:00"
+                                    },
+                                    
+                                    {
+                                        "modelId": "amazon.titan-text-lite-v1",
+                                        "workflowId": "xxxxxxxx",
+                                        "access": "grant",
+                                        "message": "GRANT",
+                                        "createdAt": "2025-10-16T07:40:27.766429+00:00",
+                                        "updatedAt": "2025-10-16T07:40:27.766429+00:00"
+                                    },           
+                                    {
+                                        "modelId": "amazon.titan-text-lite-v1",
+                                        "workflowId": "xxxxxx",
+                                        "access": "revoke",
+                                        "message": "Revoke successful",
+                                        "createdAt": "2025-10-16T07:40:27.766429+00:00",
+                                        "updatedAt": "2025-10-16T07:40:27.766429+00:00"
+                                    }
+
+                                ]
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "Workflow Id xxxx does not exists in modelops"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/workflow/{workflow_id}": {
+            "patch": {
+                "summary":"Updating a workflow API",
+                "description": "Use this API endpoint to update a workflow that is already onboarded to ModelOps. User can update the dispatchType and dispatchConfig using this API.",
+                "tags": ["Workflow Management"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "workflow_id",
+                        "in": "path",
+                        "description": "The ID of the workflow to update",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "oneOf": [
+                                    {"$ref": "#/components/schemas/WorkflowPatchSns"},
+                                    {"$ref": "#/components/schemas/WorkflowPatchStepFunction"},
+                                    {"$ref": "#/components/schemas/WorkflowPatchEventBridge"}
+                                ],
+                                "discriminator": {
+                                    "propertyName": "dispatchType",
+                                    "mapping": {
+                                        "sns": "#/components/schemas/WorkflowPatchSns",
+                                        "step_function": "#/components/schemas/WorkflowPatchStepFunction",
+                                        "event_bridge": "#/components/schemas/WorkflowPatchEventBridge"
+                                    }
+                                }
+                            },
+                            "examples": {
+                                "sns": {
+                                    "summary":"Example of sns",
+                                    "value": {
+                                        "dispatchType": "sns",
+                                        "dispatchConfig": {
+                                            "arn": "arn:aws:states:<region>:<account>:stateMachine:<name>"
+                                        }
+                                    }
+                                },
+                                "step_function": {
+                                    "summary":"Example of step_function",
+                                    "value": {
+                                        "dispatchType":"step_function",
+                                        "dispatchConfig": {
+                                            "arn": "arn:aws:states:<region>:<account>:stateMachine:<name>"
+                                        }
+                                    }
+                                },
+                                "event_bridge": {
+                                    "summary": "Example of event_bridge",
+                                    "value": {
+                                        "dispatchType": "event_bridge",
+                                        "dispatchConfig": {
+                                            "arn": "arn:aws:states:<region>:<account>:stateMachine:<name>",
+                                            "source": "modelops.workflow",
+                                            "detail_type": "WorkflowInvoke"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description":"OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "dispatchType": {
+                                            "type": "string",
+                                            "example": "sns"
+                                        },
+                                        "dispatchConfig": {
+                                            "type": "object",
+                                            "properties": {
+                                                "arn": {
+                                                    "type": "string",
+                                                    "example": "arn:aws:sns:us-east-1:123456789012:my-topic"
+                                                }
+                                            }
+                                        },
+                                        "updatedAt": {
+                                            "type": "string",
+                                            "example": "2025-09-15T08:58:02.000Z"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "No workflow found for workflowId: xxxx"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Deboarding a workflow API",
+                "description": "Use this API endpoint to deboard a workflow from ModelOps.",
+                "tags": ["Workflow Management"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "workflow_id",
+                        "in": "path",
+                        "description": "The ID of the workflow to delete",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                    "workflowId": {
+                                        "type": "string",
+                                        "example": "xxxxx"
+                                    },
+                                    "active": {
+                                        "type": "boolean",
+                                        "example": "false"
+                                    },
+                                    "message": {
+                                        "type": "string",
+                                        "example": "Workflow deboarded successfully"
+                                    }
+                                }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "No workflow found for workflow_name: xxxx"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "security": [
+        {
+            "bearerAuth": []
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        },
+        "schemas": {
+            "CredentialsList": {
+                "type": "object",
+                "properties": {
+                    "clientId": {
+                        "type": "string",
+                        "example": "xxxxxxxx"
+                    },
+                    "clientSecret": {
+                        "type": "string",
+                        "example": "xxxxxx"
+                    }
+                }
+            },
+            "WorkflowBase": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the workflow"
+                    },
+                    "dispatchType": {
+                        "type": "string",
+                        "enum": ["sns","step_function","event_bridge"],
+                        "description": "Dispatch mechanism for the workflow"
+                    }
+                }
+            },
+            "WorkflowRequestSns": {
+                "allOf": [
+                    {"$ref": "#/components/schemas/WorkflowBase"},
+                    {
+                        "type": "object",
+                        "properties": {
+                            "dispatchType": {"type": "string", "enum": ["sns"] },
+                            "dispatchConfig": {
+                                "type": "object",
+                                "required": ["arn"],
+                                "properties": {
+                                    "arn": {
+                                        "type": "string",
+                                        "example": "arn:aws:sns:us-east-1:123456789012:my-topic"
+                                    }
+                                },
+                                "additionalProperties": false
+                            }
+                        },
+                        "required":["dispatchConfig"]
+                    }
+                ]
+            },
+            "WorkflowRequestStepFunction": {
+                "allOf": [
+                    {"$ref": "#/components/schemas/WorkflowBase"},
+                    {
+                        "type": "object",
+                        "properties": {
+                            "dispatchType": { "type": "string", "enum": ["step_function"] },
+                            "dispatchConfig": {
+                                "type": "object",
+                                "required": ["arn"],
+                                "properties": {
+                                    "arn": {
+                                        "type": "string",
+                                        "example": "arn:aws:states:us-east-1:123456789012:stateMachine:TextractBedrockWF"
+                                    }
+                                },
+                                "additionalProperties":false
+                            }
+                        },
+                        "required": ["dispatchConfig"]
+                    }
+                ]
+            },
+            "WorkflowRequestEventBridge": {
+                "allOf": [
+                    {"$ref":"#/components/schemas/WorkflowBase"},
+                    {
+                        "type": "object",
+                        "properties": {
+                            "dispatchType": {"type": "string", "enum": ["event_bridge"] },
+                            "dispatchConfig": {
+                                "type": "object",
+                                "required": ["arn", "source", "detail_type"],
+                                "properties": {
+                                    "arn": {
+                                        "type": "string",
+                                        "example": "arn:aws:events:us-east-1:123456789012:event-bus/default"
+                                    },
+                                    "source": {
+                                        "type": "string",
+                                        "example": "modelops.workflow"
+                                    },
+                                    "detail_type": {
+                                        "type": "string",
+                                        "example": "WorkflowInvoke"
+                                    }
+                                },
+                                "additionalProperties": false
+                            }
+                        },
+                        "required": ["dispatchConfig"]
+                    }
+                ]
+            },
+            "WorkflowPatchSns": {
+                "type": "object",
+                "properties": {
+                    "dispatchType": { "type": "string", "enum": ["sns"] },
+                    "dispatchConfig": {
+                        "type": "object",
+                        "required": ["arn"],
+                        "properties": {
+                            "arn": {
+                                "type": "string",
+                                "description": "SNS topic ARN",
+                                "example": "arn:aws:sns:<region>:<account>:<topicName>"
+                            }
+                        },
+                        "additionalProperties": false
+                    }
+                },
+                "required": ["dispatchType", "dispatchConfig"],
+                "additionalProperties": false
+            },
+            "WorkflowPatchStepFunction": {
+                "type": "object",
+                "properties": {
+                    "dispatchType": { "type": "string", "enum": ["step_function"] },
+                    "dispatchConfig": {
+                        "type": "object",
+                        "required": ["arn"],
+                        "properties": {
+                            "arn": {
+                                "type": "string",
+                                "description": "Step Functions state machine ARN",
+                                "example": "arn:aws:states:<region>:<account>:stateMachine/<name>"
+                            }
+                        },
+                        "additionalProperties": false
+                    }
+                },
+                "required": ["dispatchType", "dispatchConfig"],
+                "additionalProperties": false
+            },
+            "WorkflowPatchEventBridge": {
+                "type": "object",
+                "properties": {
+                    "dispatchType": { "type": "string", "enum": ["event_bridge"] },
+                    "dispatchConfig": {
+                        "type": "object",
+                        "required": ["arn", "source", "detail_type"],
+                        "properties": {
+                            "arn": {
+                                "type": "string",
+                                "description": "Event bus or rule ARN",
+                                "example": "arn:aws:events:<region>:<account>:event-bus/<busName>"
+                            },
+                            "source": {
+                                "type": "string",
+                                "description": "Event source",
+                                "example": "modelops.workflow"
+                            },
+                            "detail_type": {
+                                "type": "string",
+                                "description": "Event detail type",
+                                "example": "WorkflowInvoke"
+                            }
+                        },"additionalProperties": false
+                    }
+                },
+                "required": ["dispatchType", "dispatchConfig"],
+                "additionalProperties": false
+            },
+            "WorkflowPatchResponseBase": {
+                "type": "object",
+                "properties": {
+                    "dispatchType": {
+                        "type": "string",
+                        "enum": ["sns", "step_function", "event_bridge"],
+                        "description": "Dispatch mechanism configured for the workflow"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Timestamp when the workflow dispatch settings were last updated"
+                    }
+                },
+                "required": ["dispatchType", "updatedAt"],
+                "additionalProperties": false
+            }
+            
+        }
+    }
+}

@@ -1,0 +1,113 @@
+site_name: ModelOps Documentation
+docs_dir: docs
+nav:
+  - Home: index.md
+  - ModelOps StarterKit:
+    - What is ModelOps: StarterKit/About.md
+    - Definitions: StarterKit/Definitions.md
+    - Onboarding: StarterKit/Onboarding.md
+    - Integration: StarterKit/Integration Overview.md
+    - APIs:
+      - Overview: StarterKit/APIs Overview.md
+      - Authentication API: StarterKit/Authentication APIs.md
+      - Model Invocation API: StarterKit/Model Invocation APIs.md
+      - Job Management API: StarterKit/Job Management API.md
+      - Workflow Related API: StarterKit/Workflow Invocation API.md
+      - Public key and Health related API: StarterKit/Call back and health related API.md
+      - AI Model API: StarterKit/AI Model API.md
+    - Use Case: 
+      - 1. Using Bruno Collections: StarterKit/Use Case.md
+      - 2. Reviewing a Resume:
+        - Summary: StarterKit/usecase 1 summary.md
+        - Convenience Route: Notebooks/review_resume_conv.ipynb
+        - Proxy Route:  Notebooks/review_resume_proxy.ipynb
+      - 3. Upload a CSV file and Ask Questions:
+        - Summary: StarterKit/usecase 2 summary.md
+        - Convenience Route: Notebooks/ask_csv_conv.ipynb
+        - Proxy Route: Notebooks/ask_csv_proxy.ipynb
+      - 4. Medical Records Summarization - Extract and Summarize Patient History:
+        - Summary: StarterKit/usecase 3 summary.md
+        - Convenience Route: Notebooks/summarize_medical_record_conv.ipynb
+        - Proxy Route: Notebooks/summarize_medical_record_proxy.ipynb
+    - Error Codes: StarterKit/Error codes.md
+    - Best Pratices: StarterKit/Best Practice.md
+    - Python Notebook: Notebooks/invoke_model.ipynb
+    - Swagger Documentation: StarterKit/Swagger/Swagger.md
+    - FAQs: StarterKit/FAQs.md
+    - Revision History: StarterKit/Revision History.md
+    - Contact: StarterKit/Contact.md
+  - ModelOps Operations Manual:
+    - Introduction: Operations Manual/Introduction.md
+    - Assigning MO_Admin Access to a User: Operations Manual/Prerequisites.md
+    - Authentication: Operations Manual/Authentication Process.md
+    - APIs:
+      - Model Management: Operations Manual/Model APIs.md
+      - Tenant Management: Operations Manual/Tenant APIs.md
+      - User Management: Operations Manual/User APIs.md
+      - Workflow Management: Operations Manual/Workflow APIs.md
+    - Best Practices: Operations Manual/Best Practice.md
+    - Swagger Documentation: Operations Manual/Swagger/Swagger.md
+    - FAQs: Operations Manual/FAQs.md
+  - Monitoring and Health Check Manual:
+    - Overview: Monitoring and Health Check Manual/Overview.md
+    - Monitoring ModelOps:
+      - ModelOps Monitoring Dashboard Overview: Monitoring and Health Check Manual/Monitoring.md 
+      - Accessing the Dashboard: Monitoring and Health Check Manual/Access.md
+      - Dashboard Layout:
+        - Dashboard Overview: Monitoring and Health Check Manual/Dashboard Layout Overview.md
+        - Model Comparison Tab: Monitoring and Health Check Manual/Dashboard.md
+        - Cost Tab: Monitoring and Health Check Manual/Cost.md
+        - Tenant Metrics Tab: Monitoring and Health Check Manual/Tenant Metrics Tab.md
+        - User Metrics Tab: Monitoring and Health Check Manual/User Metrics.md
+    - QuickSight-Based Reporting System Architecture: Monitoring and Health Check Manual/Reporting System Architecture.md
+    - Best Practices: Monitoring and Health Check Manual/Best Practices.md
+    - FAQs: Monitoring and Health Check Manual/FAQs.md
+  - ModelOps Workflow Developer Manual: 
+    - Workflow development/Workflow Development.md
+ 
+theme:
+  name: material
+  language: en
+  font:
+    text: Nunito Sans
+  features:
+    - content.code.copy
+    - navigation.footer
+    - navigation.top
+    - navigation.tabs
+    
+markdown_extensions:
+  - toc:
+      permalink: true
+      toc_depth: 2-3
+  - admonition
+  - attr_list
+  - pymdownx.superfences
+  - pymdownx.details
+  - md_in_html
+  
+
+plugins:
+  - search
+  - mkdocs-jupyter:
+      include:
+        - "*.ipynb"
+      ignore:
+        - "Files/*.ipynb"
+  - swagger-ui-tag
+  - glightbox 
+
+
+extra_css:
+  - Styles/extra.css
+extra:
+  generator: false
+
+
+
+copyright: "Copyright © 2025 Maximus. All rights reserved."
+
+
+  
+
+

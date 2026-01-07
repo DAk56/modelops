@@ -1,0 +1,1916 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+        "title": "ModelOps User API",
+        "version": "1.0.0",
+        "description": "ModelOps exposes a RESTful API interface with secured endpoints, accessible exclusively within the Maximus VPN. All communications are encrypted and authenticated to ensure safe interaction with AI services and resources."
+    },
+    "tags": [
+        {
+            "name": "Authentication",
+            "description": "Authentication"
+        },
+        {
+            "name": "Model Invocation",
+            "description": "Operations related to model invocation"
+        },
+        {
+            "name": "Job Management",
+            "description": "Operations related to job management"
+        },
+        {
+            "name": "Workflow Invocation",
+            "description": "Operations related to workflow"
+        },
+        {
+            "name": "Others",
+            "description": "General Operations"
+        }
+    ],
+    "servers": [
+        {
+            "url": "https://dev.modelops.maximus.com",
+            "description": "Development Server"
+        },
+        {
+            "url": "https://dev-modelops.auth.ap-south-1.amazoncognito.com",
+            "description": "Access Token for Client Credentials API"
+        },
+        {
+            "url": "https://cognito-idp.ap-south-1.amazonaws.com",
+            "description": "Access Token for User Credentials API"
+        }
+    ],
+    "paths": {
+        "/oauth2/token": {
+            "post": {
+                "summary": "Client Credentials API",
+                "description": "Authorize with Basic (username/password) in the modal, then Execute to receive a token. Use that token in 'Bearer (Client Token)'.",
+                "tags":["Authentication"],
+                "security": [
+                    {
+                        "basicAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "grant_type"
+                                ],
+                                "properties": {
+                                    "grant_type": {
+                                        "type": "string",
+                                        "example": "client_credentials"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Access Token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "invalid_client"
+                                        }                              
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/": {
+            "post": {
+                "summary": "User Credentials API",
+                "description": "Post user credentials in the body to receive a token. Use that token in 'Bearer (User Token)' and provide tenant_Id in the Authorize modal.",
+                "tags":["Authentication"],
+                "parameters": [                    
+                    {
+                        "name": "X-Amz-Target",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "AWSCognitoIdentityProviderService.InitiateAuth"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/x-amz-json-1.1": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserCredential"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Access Token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                   "$ref": "#/components/schemas/UserCredentialResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "Incorrect username or password / User pool client xxxxx does not exist."
+                                        }                              
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/proxy/aws/bedrock/{modelId}": {
+            "post": {
+                "summary": "Invoke Bedrock (Proxy Route) API",
+                "description": "Provides granular control over model behavior, including inference configuration and multimodal input.",
+                "tags":["Model Invocation"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "tenantId": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "modelId",
+                        "in": "path",
+                        "allowReserved": true,
+                        "description": "ID of Model",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Create a new payload for bedrock model",
+                    "content": {
+                        "text/html": {
+                            "schema": {
+                                
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Job details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BedrockProxy"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "Prompt is missing"
+                                        }                              
+                                    }                           
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/proxy/aws/textract": {
+            "post": {
+                "summary": "Invoke Textract (Proxy Route) API",
+                "description": "Allows users to configure Textract-specific features and queries for document analysis.",
+                "tags":["Model Invocation"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "tenantId": []
+                    }
+                ],
+                "requestBody": {
+                    "description": "Create a new payload for textract model",
+                    "content": {
+                        "text/html": {
+                            "schema": {
+                                
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Job details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TextractResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "Max tokens must be between 1 and 200000."
+                                        }                              
+                                    }                           
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/models/bedrock/{model_identifier}": {
+            "post": {
+                "summary": "Invoke Bedrock (Convenience Route) API",
+                "description": "Ideal for basic text generation tasks. Requires only a prompt; default model configurations can be overridden if needed.",
+                "tags":["Model Invocation"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "tenantId": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "model_identifier",
+                        "in": "path",
+                        "description": "Model Identifier",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Create a new payload for bedrock model",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BedrockConvPayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Job details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BedrockProxy"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "Headers must contain tenant_id."
+                                        }                              
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {                                    
+                                    "$ref": "#/components/schemas/ModelNotFound"
+                                }
+                            }
+                        }    
+                    }
+                }
+            }
+        },
+        "/v1/models/textract": {
+            "post": {
+                "summary": "Invoke Textract (Convenience Route) API",
+                "description": "With a set of queries users can extract the data given in a document.",
+                "tags":["Model Invocation"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "tenantId": []
+                    }
+                ],
+                "requestBody": {
+                    "description": "Create a new payload for textract model",
+                    "content": {
+                        "application/json": {
+							"schema": {
+                                							
+							}
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Job details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TextractResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "Model throttle exception: An error occurred (ValidationException) when calling the InvokeModel operation: messages.0.content.0.image.source.base64: image cannot be empty."
+                                        }                              
+                                    }                           
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/prepare/{{model_id}}": {
+            "post": {
+                "summary": "Prepare presigned URL for document upload",
+                "description": "Returns a presigned URL for uploading a document to S3. Use the returned `url` to upload the file directly.",
+                "tags": ["Others"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "tenantId": []
+                    }
+                ],
+                "parameters": [
+                        {
+                        "name": "modelId",
+                        "in": "path",
+                        "description": "The ID of the model to invoke(textract)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "textract"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": ["documentType"],
+                                "properties": {
+                                    "documentType": {
+                                        "type": "string",
+                                        "example": "png"
+                                    }
+                                }
+                            },
+                            "example": {
+                                "documentType": "png"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "jobId": {
+                                            "type": "string",
+                                            "example": "textract_xxxxxxx"
+                                        },
+                                        "modelId": {
+                                            "type": "string",
+                                            "example": "textract"
+                                        },
+                                        "url": {
+                                            "type": "string",
+                                            "example": "https://dev-33nixhpycmx46tjnga27lter.s3.amazonaws.com/textract_36QPcgLRPqwcS3bLmzaCSw7xQl/textract_36QPcgLRPqwcS3bLmzaCSw7xQlattachment.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAXYZ..."
+                                        },
+                                        "expiresIn": {
+                                            "type": "string",
+                                            "example": "300 seconds"
+                                        },
+                                        "createdAt": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2025-09-29T11:48:23.799Z"
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "jobId": "textract_xxxxxxxx",
+                                    "modelId": "textract",
+                                    "url": "https://dev-33nixhpycmx46tjnga27lter.s3.amazonaws.com/textract_36QPcgLRPqwcS3bLmzaCSw7xQl/textract_36QPcgLRPqwcS3bLmzaCSw7xQlattachment.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAXYZ...",
+                                    "expiresIn": "300 seconds",
+                                    "createdAt": "2025-09-29T11:48:23.799Z"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    }
+                }
+            }
+        },
+        "/v1/proxy/aws/comprehend": {
+            "post": {
+                "summary": "Invoke Comprehend (Proxy Route) API",
+                "description": "Invokes Comprehend service for NLP tasks such as entity detection, sentiment analysis, or language detection.",
+                "tags": ["Model Invocation"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "tenantId": []
+                    }
+                ],
+                "requestBody": {
+                    "required":true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Job details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ComprehendResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "Unrecognized parameter 'language_code'."
+                                        }                              
+                                    } 
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/workflows/{workflow_id}": {
+            "post": {
+                "summary": "Invoking a Workflow API",
+                "description": "Use this API endpoint to invoke a workflow as a tenant/user. The request is processed asynchronously: ModelOps returns a workflowJobId, runs the workflow as per its configured dispatch, and once completed you can retrieve results via the Get Data API (after checking job status).",
+                "tags":["Workflow Invocation"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "tenantId": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "workflow_id",
+                        "in": "path",
+                        "description": "The ID of the workflow to invoke",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema":{
+                                "type":"string"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "jobId": {
+                                            "type": "string",
+                                            "example": "xxxxxxxxxx"
+                                        },
+                                        "workflowId": {
+                                            "type": "string",
+                                            "example": "xxxxxx"
+                                        },
+                                        "jobStatus": {
+                                            "type": "string",
+                                            "example": "Queued"
+                                        },
+                                        "createdAt": {
+                                            "type": "string",
+                                            "format":"date-time",
+                                            "example": "2023-09-29T11:48:23.799Z"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type":"object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "No workflow found for workflow_name: xxxx"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "summary": "Get workflow details of a specific workflow",
+                "description": "Returns details for the specified workflow ID.",
+                "tags":["Workflow Invocation"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "tenantId": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "workflow_id",
+                        "in": "path",
+                        "required": true,
+                        "description": "The workflow ID to retrieve",
+                        "schema": { "type": "string" },
+                        "example": "idp"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkflowSingleResponse"
+                                },
+                                "examples": {
+                                    "example": {
+                                        "summary": "Single workflow",
+                                        "value": {
+                                            "workflow": {
+                                                "workflow_id": "idp",
+                                                "status": "active",
+                                                "model_access": [
+                                                     "amazon.titan-text-lite-v1"
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "Headers must contain tenant_id"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/workflows":{
+            "get": {
+                "summary": "Get all workflows",
+                "description": "Returns all workflows details of the provided tenant.",
+                "tags":["Workflow Invocation"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "tenantId": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                            "$ref": "#/components/schemas/WorkflowListResponse"
+                                },
+                                "examples": {
+                                    "example": {
+                                        "summary": "List of workflows",
+                                        "value": {
+                                            "workflows": [
+                                                {
+                                                    "workflow_id": "idp1",
+                                                    "status": "active",
+                                                    "model_access": [
+                                                        "amazon.titan-text-lite-v1",
+                                                        "textract"
+                                                    ]
+                                                },
+                                                {
+                                                    "workflow_id": "idp",
+                                                    "status": "active",
+                                                    "model_access": [
+                                                        "amazon.titan-text-lite-v1"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type":"object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "Headers must contain tenant_id"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+            }
+        },
+        "/v1/public/key": {
+            "get": {
+                "description": "Use this API to retrieve the latest public key used by ModelOps for verifying the authenticity of callback signatures. This key is essential for validating signatures in secure communication workflows.",
+                "summary": "Get Public Key API",
+                "tags":["Others"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PublicKeyResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCode": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "errorMessage": {
+                                            "type": "string",
+                                            "example": "Unauthorised"
+                                        }                              
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/health": {
+            "get": {
+                "summary": "Get Health details API",
+                "description": "Provides a quick way to check if the ModelOps APIs and services are operational.",
+                "tags": ["Others"],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type":"string",
+                                    "example": "OK"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/jobs": {
+            "get": {
+                "summary": "Get Jobs API",
+                "description": "Retrieve a list of jobs created by the authenticated user or client. Supports optional query parameters for filtering by model type, job status, and more.",
+                "tags":["Job Management"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "tenantId": []
+                    }
+                ],
+				"parameters": [
+                    {
+                        "name": "params",
+                        "in": "query",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Job details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GetAllJobs"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NoJobFound"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TokenExpired"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/jobs/{jobId}": {
+            "get": {
+                "summary": "Get Job by Job ID API",
+                "description": "Retrieve detailed status and metadata for a specific job using its jobId.",
+                "tags":["Job Management"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "tenantId": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "jobId",
+                        "in": "path",
+                        "description": "ID of Job",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Job details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Job"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NoJobFound"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TokenExpired"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/jobs/{jobId}/data": {
+            "get": {
+                "summary": "Get Data API",
+                "description": "Fetch the output data of a completed job. This API should be called only after the job status is marked as 'Completed'.",
+                "tags":["Job Management"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "tenantId": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "jobId",
+                        "in": "path",
+                        "description": "ID of Job",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Data related to jobId",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GetDataContent"
+                                },
+                                "examples": {
+                                    "example": {
+                                        "value": {
+                                            "content": [
+                                                {
+                                                    "type": "text",
+                                                    "text": "output text"
+                                                }
+                                            ],
+                                            "additionalDetails": {
+                                                "requestId": "f4be98dd-3077-4db2-b385-7606a2550083",
+                                                "date": "2025-10-29T09:40:02+00:00",
+                                                "contentType": "application/json",
+                                                "contentLength": "1903 tokens",
+                                                "inputToken": 16,
+                                                "outputToken": 407,
+                                                "type": "message",
+                                                "role": "assistant",
+                                                "model": "claude-3-haiku-20240307",
+                                                "stopReason": "end_turn",
+                                                "retryAttempts": 0,
+                                                "invocationLatency": "4152",
+                                                "completionReason": null
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NoJobFound"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TokenExpired"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/models": {
+            "get": {
+                "summary": "Get AI Models",
+                "description": "Returns all AI models available for the tenant.",
+                "tags": ["Others"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "tenantId": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ModelListResponse"
+                                },
+                                "examples": {
+                                    "example": {
+                                        "value": {
+                                            "models": [
+                                                {
+                                                    "modelId": "anthropic.claude-3-sonnet-20240229-v1:0",
+                                                    "service": "TEXT, IMAGE",
+                                                    "status": "Active",
+                                                    "modelIdentifier": "anthropic-claude-3-sonnet",
+                                                    "modelInfo": {
+                                                        "modelId": "anthropic.claude-3-sonnet-20240229-v1:0",
+                                                        "modelArn": "arn:aws:bedrock:ap-south-1::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0",
+                                                        "modelName": "Claude 3 Sonnet",
+                                                        "providerName": "Anthropic",
+                                                        "modelLifecycle": {
+                                                            "status": "ACTIVE"
+                                                        },
+                                                        "inputModalities": [
+                                                            "TEXT",
+                                                            "IMAGE"
+                                                        ],
+                                                        "outputModalities": [
+                                                            "TEXT"
+                                                        ],
+                                                        "customizationsSupported": [],
+                                                        "inferenceTypesSupported": [
+                                                            "ON_DEMAND"
+                                                        ],
+                                                        "responseStreamingSupported": true
+                                                    }
+                                                },
+                                                {
+                                                    "modelId": "comprehend",
+                                                    "service": "TEXT_ANALYSIS",
+                                                    "status": "Active",
+                                                    "modelIdentifier": "comprehend",
+                                                    "modelInfo": {
+                                                        "modelId": "comprehend",
+                                                        "modelName": "Comprehend",
+                                                        "providerName": "Amazon",
+                                                        "inputModalities": [
+                                                            "TEXT_ANALYSIS"
+                                                        ],
+                                                        "outputModalities": [
+                                                            "TEXT"
+                                                        ]
+                                                    }
+                                                },
+                                                {
+                                                    "modelId": "meta.llama3-8b-instruct-v1:0",
+                                                    "service": "TEXT",
+                                                    "status": "Active",
+                                                    "modelIdentifier": "meta-llama3-8b-instruct",
+                                                    "modelInfo": {
+                                                        "modelId": "meta.llama3-8b-instruct-v1:0",
+                                                        "modelArn": "arn:aws:bedrock:ap-south-1::foundation-model/meta.llama3-8b-instruct-v1:0",
+                                                        "modelName": "Llama 3 8B Instruct",
+                                                        "providerName": "Meta",
+                                                        "modelLifecycle": {
+                                                            "status": "ACTIVE"
+                                                        },
+                                                        "inputModalities": [
+                                                            "TEXT"
+                                                        ],
+                                                        "outputModalities": [
+                                                            "TEXT"
+                                                        ],
+                                                        "customizationsSupported": [],
+                                                        "inferenceTypesSupported": [
+                                                            "ON_DEMAND"
+                                                        ],
+                                                        "responseStreamingSupported": true
+                                                    }
+                                                },
+                                                {
+                                                    "modelId": "snap",
+                                                    "service": "custom",
+                                                    "status": "Active",
+                                                    "modelIdentifier": "snap",
+                                                    "modelInfo": {}
+                                                },
+                                                {
+                                                    "modelId": "textract",
+                                                    "service": "DOCUMENT_PROCESSING",
+                                                    "status": "Active",
+                                                    "modelIdentifier": "textract",
+                                                    "modelInfo": {
+                                                        "modelId": "textract",
+                                                        "modelName": "Textract",
+                                                        "providerName": "Amazon",
+                                                        "inputModalities": [
+                                                            "DOCUMENT_PROCESSING"
+                                                        ],
+                                                        "outputModalities": [
+                                                            "TEXT"
+                                                        ]
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                     "$ref": "#/components/schemas/ModelNotFound"                       
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/models/{model_identifier}": {
+            "get": {
+                "summary": "Get AI Model API",
+                "description": "Provides detailed information about a specific AI model, helping users assess its capabilities and integration requirements.",
+                "tags":["Others"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "tenantId": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "model_dentifier",
+                        "in": "path",
+                        "description": "Model Identifier",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Data related to jobId",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Model"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                     "$ref": "#/components/schemas/ModelNotFound"                       
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },        
+        "/v1/jobs/{id}": {
+            "delete": {
+                "summary": "Cancel Job API",
+                "description": "Cancel a job before the jobStatus enters the Processing state, i.e. it is either in Open or Queued state. Useful for aborting incorrect or unintended submissions.",
+                "tags":["Job Management"],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "tenantId": []
+                    }
+                    
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of Job",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cancel Job",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CancelJob"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NoJobFound"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TokenExpired"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "security": [
+        {
+            "bearerAuth": []
+        },
+        {
+            "tenantId": []
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+                "description": "Paste the token you obtained from the authentication API"
+            },
+            "tenantId": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "tenant_id",
+                "description": "Tenant identifier header."
+            },
+            "basicAuth": {
+                "type": "http",
+                "scheme": "basic",
+                "description": "Use only for calling the Client Credentials API to obtain a token."
+            }
+            
+        },
+        "schemas": {
+            "User": {
+                "type": "object",
+                "properties": {
+                    "access_token": {
+                        "type": "string",
+                        "example": "xxxxxxxx"
+                    },
+                    "expires_in": {
+                        "type": "integer",
+                        "example": 3600
+                    },
+                    "token_in": {
+                        "type": "string",
+                        "example": "Bearer"
+                    }
+                }
+            },
+            "BedrockProxy": {
+                "type": "object",
+                "properties": {
+                    "jobId": {
+                        "type": "string",
+                        "example": "amazon.titan-text-lite-v1_xxxxxxx"
+                    },
+                    "modelId": {
+                        "type": "string",
+                        "example": "amazon.titan-text-lite-v1"
+                    },
+                    "jobStatus": {
+                        "type": "string",
+                        "example": "Queued"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "example": "2025-06-13T10:26:29.796Z"
+                    }
+                }
+            },
+            "Job": {
+                "type": "object",
+                "properties": {
+                    "jobId": {
+                        "type": "string",
+                        "example": "anthropic.claude-3-haiku-20240307-v1:0_xxxxx"
+                    },
+                    "jobStatus": {
+                        "type": "string",
+                        "example": "Completed"
+                    },
+                    "modelId": {
+                        "type": "string",
+                        "example": "anthropic.claude-3-haiku-20240307-v1:0"
+                    },
+                    "inputSize": {
+                        "type": "string",
+                        "example": "1538214.0kb"
+                    },
+                    "outputSize": {
+                        "type": "string",
+                        "example": "407.0kb"
+                    },
+                    "createdTS": {
+                        "type": "string",
+                        "example": "2025-06-13T09:42:55.832Z"
+                    },
+                    "completionTS": {
+                        "type": "string",
+                        "example": "2025-06-13T09:42:58.122Z"
+                    },
+                    "queuedTS": {
+                        "type": "string",
+                        "example": "2025-06-13T09:42:56.204Z"
+                    },
+                    "processingTS": {
+                        "type": "string",
+                        "example": "2025-06-13T09:42:58.053Z"
+                    },
+                    "cancellationTS": {
+                        "type": "string",
+                        "example": null
+                    },
+                    "inputTokens": {
+                        "type": "integer",
+                        "example": 730
+                    },
+                    "outputTokens": {
+                        "type": "integer",
+                        "example": 73
+                    },
+                    "pageCount": {
+                        "type": "string",
+                        "example": null
+                    },
+                    "textractType": {
+                        "type": "string",
+                        "example": null
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "example": "2025-06-13T09:42:55.832Z"
+                    },
+                    "completedAt": {
+                        "type": "string",
+                        "example": "2025-06-13T09:42:58.122Z"
+                    },
+                    "servedAt": {
+                        "type": "string",
+                        "example": "2025-06-13T09:42:58.122Z"
+                    },
+                    "cancellation_status": {
+                        "type": "string",
+                        "example": null
+                    },
+                    "errorMessage": {
+                        "type": "string",
+                        "example": null
+                    }
+                }
+            },
+            "GetAllJobs": {
+                "type": "object",
+                "properties": {
+                    "jobs": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Job"
+                        }
+                    }
+                }
+            },
+            "BedrockConvPayload": {
+                "type": "object",
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "example": "HI what is weather today in bangalore"
+                    }
+                }
+            },
+            "DataContent": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "example": "text"
+                    },
+                    "text": {
+                        "type": "string",
+                        "example": "Output text"
+                    }
+                }
+            },
+            "GetDataContent": {
+                "type": "object",
+                "properties": {
+                    "content": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DataContent"
+                        }
+                    },
+                    "additionalDetails": {
+                        "$ref": "#/components/schemas/AdditionalDetails"
+                    }
+                }
+            },
+            "additionalDetails": {
+                "type": "object",
+                "properties": {
+                    "requestId": {
+                        "type": "string",
+                        "example": "xxxxxxxx"
+                    },
+                    "date": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-06-13T10:26:58.123Z"
+                    },
+                    "contentType": {
+                        "type": "string",
+                        "example": "application/json"
+                    },
+                    "contentLength": {
+                        "type": "string",
+                        "example": "2048 tokens"
+                    },
+                    "inputToken": {
+                        "type": "integer",
+                        "example": 1538
+                    },
+                    "outputToken": {
+                        "type": "integer",
+                        "example": 407
+                    },
+                    "type": {
+                        "type": "string",
+                        "example": "message"
+                    },
+                    "role": {
+                        "type": "string",
+                        "example": "assistant"
+                    },
+                    "model": {
+                        "type": "string",
+                        "example": "claude-3-haiku-20240307"
+                    },
+                    "stopReason": {
+                        "type": "string",
+                        "example": "end_turn"
+                    },
+                    "retryAttempts": {
+                        "type": "integer",
+                        "example": 0
+                    },
+                    "invocationLatency": {
+                        "type": "string",
+                        "example": "4152"
+                    },
+                    "completionReason": {
+                        "type": "string",
+                        "nullable": true,
+                        "example": null
+                    }
+                }
+            },
+            "Model": {
+                "type": "object",
+                "properties": {
+                    "model": {
+                        "$ref": "#/components/schemas/ModelData"
+                    }
+                }
+            },
+            "ModelLifecycle": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "example": "ACTIVE"
+                    }
+                }
+            },
+            "ModelData": {
+                "type": "object",
+                "properties": {
+                    "modelId": {
+                        "type": "string",
+                        "example": "amazon.titan-text-lite-v1"
+                    },
+                    "service": {
+                        "type": "string",
+                        "example": "TEXT, IMAGE"
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "Active"
+                    },
+                    "modelIdentifier": {
+                        "type": "string",
+                        "example": "amazon-titan-text-lite"
+                    },
+                    "modelInfo": {
+                        "$ref": "#/components/schemas/ModelInfo"
+                    }
+                }
+            },
+            "ModelInfo": {
+                "type": "object",
+                "properties": {
+                    "modelId": {
+                        "type": "string",
+                        "example": "amazon-titan-text-lite"
+                    },
+                    "modelArn": {
+                        "type": "string",
+                        "example": "arn:aws:bedrock:ap-south-1::foundation-model/anthropic.claude-3-haiku-20240307-v1:0"
+                    },
+                    "modelName": {
+                        "type": "string",
+                        "example": "Titan Text G1 - Lite"
+                    },
+                    "providerName": {
+                        "type": "string",
+                        "example": "Amazon"
+                    },
+                    "modelLifecycle": {
+                        "$ref": "#/components/schemas/ModelLifecycle"
+                    },
+                    "customizationsSupported": {
+                        "type": "array",
+                        "items": {}
+                    },
+                    "inferenceTypesSupported": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "properties": {
+                                "ON_DEMAND": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "responseStreamingSupported": {
+                        "type": "string",
+                        "example": true
+                    }
+                }
+            },
+            "CancelJob": {
+                "type": "object",
+                "properties": {
+                    "tenantId": {
+                        "type": "string",
+                        "example": "xxxxxxxxxxxxxxx"
+                    },
+                    "modelId": {
+                        "type": "string",
+                        "example": "amazon.titan-text-lite-v1"
+                    },
+                    "createdTS": {
+                        "type": "string",
+                        "example": "2025-06-13T09:42:55.832Z"
+                    },
+                    "completionTS": {
+                        "type": "string",
+                        "example": "2025-06-13T09:42:58.122Z"
+                    },
+                    "queuedTS": {
+                        "type": "string",
+                        "example": "2025-06-13T09:42:56.204Z"
+                    },
+                    "processingTS": {
+                        "type": "string",
+                        "example": "2025-06-13T09:42:58.053Z"
+                    },
+                    "message" : {
+                        "type": "string",
+                        "example": "Job amazon.titan-text-lite-v1_xxxxxx is failed."
+                    },
+                    "jobStatus": {
+                        "type": "string",
+                        "example": "Error"
+                    },
+                    "cancellationTS": {
+                        "type": "string",
+                        "example": null
+                    }
+                }
+            },
+            "UserCredential": {
+                "type": "object",
+                "properties": {
+                    "AuthFlow": {
+                        "type": "string",
+                        "example": "USER_PASSWORD_AUTH"
+                    },
+                    "ClientId": {
+                        "type": "string",
+                        "example": "xxxxxxx"
+                    },
+                    "AuthParameters": {
+                        "type": "object",
+                        "properties": {
+                            "USERNAME": {
+                                "type": "string",
+                                "example": "xxxxxxx"
+                            },
+                            "PASSWORD": {
+                                "type": "string",
+                                "example": "xxxxxxx"
+                            }
+                        }
+                    }
+                }
+            },
+            "UserCredentialResponse": {
+                "type": "object",
+                "properties": {
+                    "AuthenticationResult": {
+                        "type": "object",
+                        "properties": {
+                            "AccessToken": {
+                                "type": "string",
+                                "example": "xxxxxxxx"
+                            },
+                            "ExpiresIn": {
+                                "type": "integer",
+                                "example": 3600
+                            },
+                            "IdToken": {
+                                "type": "string",
+                                "example": "xxxxxxxx"
+                            },
+                            "RefreshToken": {
+                                "type": "string",
+                                "example": "xxxxxxxx"
+                            },
+                            "TokenType": {
+                                "type": "string",
+                                "example": "Bearer"
+                            }
+                        }
+                    },
+                    "ChallengeParameters": {
+                        "type": "object"
+                    }
+                }
+            },
+            "TextractResponse": {
+                "type": "object",
+                "properties": {
+                    "jobId": {
+                        "type": "string",
+                        "example": "textract_xxxxxxx"
+                    },
+                    "modelId": {
+                        "type": "string",
+                        "example": "textract_xxxxxxx"
+                    },
+                    "jobStatus": {
+                        "type": "string",
+                        "example": "Queued"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "example": "2025-06-13T10:26:29.796Z"
+                    }
+                }
+            },
+            "ComprehendResponse": {
+                "type": "object",
+                "properties": {
+                    "jobId": {
+                        "type": "string",
+                        "example": "comprehend_xxxxxxx"
+                    },
+                    "modelId": {
+                        "type": "string",
+                        "example": "comprehend"
+                    },
+                    "jobStatus": {
+                        "type": "string",
+                        "example": "Queued"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "example": "2025-06-13T10:26:29.796Z"
+                    }
+                }
+            },
+            "NoJobFound": {
+                "type": "object",
+                "properties": {
+                    "errorCode": {
+                        "type": "integer",
+                        "example": 404
+                    },
+                    "errorMessage": {
+                        "type": "string",
+                        "example": "No jobs found for jobId: xxxxx"
+                    }                              
+                }
+            },
+            "TokenExpired": {
+                "type": "object",
+                "properties": {
+                    "errorCode": {
+                        "type": "integer",
+                        "example": 403
+                    },
+                    "errorMessage": {
+                        "type": "string",
+                        "example": "Token has expired"
+                    }                              
+                }
+            },
+            "ModelNotFound": {
+                "type": "object",
+                "properties": {
+                    "errorCode": {
+                        "type": "integer",
+                        "example": 404
+                    },
+                    "errorMessage": {
+                        "type": "string",
+                        "example": "Model identifier: anthropic-claude-3-sonnet-20240229 not found in registry"
+                    }                              
+                }  
+            },
+            "workflow":{
+                "type": "object",
+                "properties": {
+                    "workflow_id": {
+                        "type": "string",
+                        "example": "xxxxxx1"
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "active"
+                    },
+                    "model_access": {
+                        "oneOf": [
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "string",
+                                    "example": "amazon.titan-text-lite-v1"
+                                }
+                            },
+                            {
+                                "type": "object",
+                                "additionalProperties": true
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                }
+            },
+            "WorkflowListResponse": {
+                "type": "object",
+                "properties": {
+                    "workflows": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/workflow"
+                        }
+                    }
+                }
+            },
+            "WorkflowSingleResponse": {
+                "type": "object",
+                "properties": {
+                    "workflow": {
+                        "$ref": "#/components/schemas/workflow"
+                    }
+                }
+            },
+            "PublicKeyResponse": {
+                "type": "object",
+                "properties": {
+                    "keySpecification": {
+                        "type": "string",
+                        "example": "ECC_NIST_P256"
+                    },
+                    "publicKey": {
+                        "type": "string",
+                        "example": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE7V6l6T4k+X9z...\n-----END PUBLIC KEY-----"
+                    },
+                    "signingAlgorithms": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "example": "ECDSA_SHA_256"
+                        }
+                    }
+                }
+            },
+            "ModelListResponse": {
+                "type": "object",
+                "properties": {
+                    "models": {
+                        "type": "array",
+                        "items": { "$ref": "#/components/schemas/Model" }
+                    }
+                },
+                "required": ["models"]
+            }
+        }
+    }
+}

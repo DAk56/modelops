@@ -88,8 +88,7 @@ markdown_extensions:
   
 
 plugins:
-  - search:
-      boost: 2
+  - search
   - mkdocs-jupyter:
       include:
         - "*.ipynb"
@@ -106,7 +105,7 @@ extra:
 
 
 
-copyright: "Copyright © 2025 Maximus. All rights reserved."
+copyright: "Copyright © 2026 Maximus. All rights reserved."
 
 
   
